@@ -24,6 +24,8 @@ class Application:
         self.progress_bar.pack()
         # final do "container_load_screen"
 
+        self.center_window() # Centraliza a janela após criar todo conteúdo da tela
+
         # Cria uma Thread para executar a operação de carregamento
         threading.Thread(target=self.running_operation, daemon=True).start()
         """
@@ -32,6 +34,27 @@ class Application:
         seja encerrada automaticamente quando a Thread principal (a aplicação Tkinter) é fechada. 
         Isso garante que o programa não continue rodando em segundo plano.
         """
+
+    # Função que centraliza a janela na tela
+    def center_window(self):
+        self.master.update_idletasks() # Atualiza a interface gráfica
+        """
+        Atualiza a interface para o caso de haver tarefas pendentes, e para garantir que o tamanho 
+        correto seja calculado.
+        """
+
+        # Obtém a largura e altura da tela
+        screen_width = self.master.winfo_screenwidth()
+        screen_height = self.master.winfo_screenheight()
+
+        # Obtém a largura e altura da janela atual
+        width = self.master.winfo_width()
+        height = self.master.winfo_height()
+
+        # Calcula a posição x e y para centralizar a janela
+        x = (screen_width // 2) - (width // 2)
+        y = (screen_height // 2) - (height // 2)
+        self.master.geometry(f"{width}x{height}+{x}+{y}")
 
     # Função para carregamento
     def running_operation(self):
@@ -45,7 +68,7 @@ class Application:
     # Função que atualiza a barra de progresso
     def update_progress(self, value):
         self.progress_bar['value'] = value
-        self.master.update_idletasks()  # Atualiza a interface gráfica
+        self.master.update_idletasks()
 
     # Função que encerra a janela
     def close(self):
