@@ -1,0 +1,158 @@
+[
+    {
+        "Caption": "Processador",
+        "Class": "Win32_Processor",
+        "Keys": [
+            "Name"
+        ],
+        "Name": "Processor",
+        "Visible": true
+    },
+    {
+        "Caption": "Memória",
+        "Class": "Win32_PhysicalMemory",
+        "Keys": [
+            "Capacity",
+            "SMBIOSMemoryType",
+            "Speed",
+            "Manufacturer",
+            "PartNumber",
+            "SerialNumber"
+        ],
+        "Name": "PhysicalMemory",
+        "Visible": true
+    },
+    {
+        "Caption": "Unidade de Leitor Óptico",
+        "Class": "Win32_CDROMDrive",
+        "Keys": [
+            "Name"
+        ],
+        "Name": "CDROMDrive",
+        "Visible": true
+    },
+    {
+        "Caption": "Unidade de Disco Rígido",
+        "Class": "Win32_DiskDrive",
+        "Filter": [
+            "MediaType",
+            "LIKE",
+            "'Fixed%'"
+        ],
+        "Keys": [
+            "Size",
+            "Model"
+        ],
+        "Name": "DiskDrive",
+        "Visible": true
+    },
+    {
+        "Caption": "Controlador de Vídeo",
+        "Class": "Win32_VideoController",
+        "Keys": [
+            "AdapterRAM",
+            "Name",
+            "VideoProcessor"
+        ],
+        "Name": "VideoController",
+        "Visible": true
+    },
+    {
+        "Caption": "Controlador de Rede",
+        "Class": "Win32_NetworkAdapter",
+        "Filter": [
+            "PhysicalAdapter",
+            "=",
+            "'1'",
+            "AND",
+            "PNPDeviceID",
+            "LIKE",
+            "'PCI\\%'"
+        ],
+        "Keys": [
+            "NetConnectionID",
+            "MACAddress",
+            "Name"
+        ],
+        "Name": "NetworkAdapter",
+        "Visible": true
+    },
+    {
+        "Caption": "BIOS",
+        "Class": "Win32_BIOS",
+        "Keys": [
+            "Manufacturer",
+            "Name",
+            "SerialNumber"
+        ],
+        "Name": "BIOS",
+        "Visible": false
+    },
+    {
+        "Caption": "Sistema do Computador",
+        "Class": "Win32_ComputerSystem",
+        "Keys": [
+            "Manufacturer",
+            "Model",
+            "SystemFamily"
+        ],
+        "Name": "ComputerSystem",
+        "Visible": false
+    },
+    {
+        "Caption": "Sistema Operacional",
+        "Class": "Win32_OperatingSystem",
+        "Keys": [
+            "Caption"
+        ],
+        "Name": "OperatingSystem",
+        "Visible": false
+    },
+    {
+        "Caption": "Chave de Licença do Windows",
+        "Class": "SoftwareLicensingService",
+        "Keys": [
+            "OA3xOriginalProductKey"
+        ],
+        "Name": "SoftwareLicensingService",
+        "Visible": false
+    },
+    {
+        "Caption": "Software de Segurança",
+        "Class": "AntiVirusProduct",
+        "Keys": [
+            "displayName"
+        ],
+        "Name": "AntiVirusProduct",
+        "Namespace": "root\\SecurityCenter2",
+        "Visible": false
+    },
+    {
+        "Caption": "Programas Instalados",
+        "Class": "Win32_Product",
+        "Keys": [
+            "Name"
+        ],
+        "Name": "Product",
+        "Visible": false
+    },
+    {
+        "Caption": "Chave de Licença do Office",
+        "Class": "SoftwareLicensingProduct",
+        "Filter": [
+            "LicenseStatus",
+            "=",
+            "'1'",
+            "AND",
+            "Name",
+            "LIKE",
+            "'Office%'"
+        ],
+        "Keys": [
+            "Name",
+            "PartialProductKey"
+        ],
+        "Name": "SoftwareLicensingProduct",
+        "Visible": false
+    }
+]

@@ -1,168 +1,11 @@
+import os
+import json
 import time
 import threading
 from tkinter import *
 from tkinter.ttk import Progressbar
 import pythoncom
 from wmi import WMI
-
-widgets = [
-    {
-        "Caption": "Processador",
-        "Class": "Win32_Processor",
-        "Keys": [
-            "Name"
-        ],
-        "Name": "Processor",
-        "Visible": True
-    },
-    {
-        "Caption": "Memória",
-        "Class": "Win32_PhysicalMemory",
-        "Keys": [
-            "Capacity",
-            "SMBIOSMemoryType",
-            "Speed",
-            "Manufacturer",
-            "PartNumber",
-            "SerialNumber"
-        ],
-        "Name": "PhysicalMemory",
-        "Visible": True
-    },
-    {
-        "Caption": "Unidade de Leitor Óptico",
-        "Class": "Win32_CDROMDrive",
-        "Keys": [
-            "Name"
-        ],
-        "Name": "CDROMDrive",
-        "Visible": True
-    },
-    {
-        "Caption": "Unidade de Disco Rígido",
-        "Class": "Win32_DiskDrive",
-        "Filter": [
-            "MediaType",
-            "LIKE",
-            "'Fixed%'"
-        ],
-        "Keys": [
-            "Size",
-            "Model"
-        ],
-        "Name": "DiskDrive",
-        "Visible": True
-    },
-    {
-        "Caption": "Controlador de Vídeo",
-        "Class": "Win32_VideoController",
-        "Keys": [
-            "AdapterRAM",
-            "Name",
-            "VideoProcessor"
-        ],
-        "Name": "VideoController",
-        "Visible": True
-    },
-    {
-        "Caption": "Controlador de Rede",
-        "Class": "Win32_NetworkAdapter",
-        "Filter": [
-            "PhysicalAdapter",
-            "=",
-            "'1'",
-            "AND",
-            "PNPDeviceID",
-            "LIKE",
-            "'PCI\\%'"
-        ],
-        "Keys": [
-            "NetConnectionID",
-            "MACAddress",
-            "Name"
-        ],
-        "Name": "NetworkAdapter",
-        "Visible": True
-    },
-    {
-        "Caption": "BIOS",
-        "Class": "Win32_BIOS",
-        "Keys": [
-            "Manufacturer",
-            "Name",
-            "SerialNumber"
-        ],
-        "Name": "BIOS",
-        "Visible": False
-    },
-    {
-        "Caption": "Sistema do Computador",
-        "Class": "Win32_ComputerSystem",
-        "Keys": [
-            "Manufacturer",
-            "Model",
-            "SystemFamily"
-        ],
-        "Name": "ComputerSystem",
-        "Visible": False
-    },
-    {
-        "Caption": "Sistema Operacional",
-        "Class": "Win32_OperatingSystem",
-        "Keys": [
-            "Caption"
-        ],
-        "Name": "OperatingSystem",
-        "Visible": False
-    },
-    {
-        "Caption": "Chave de Licença do Windows",
-        "Class": "SoftwareLicensingService",
-        "Keys": [
-            "OA3xOriginalProductKey"
-        ],
-        "Name": "SoftwareLicensingService",
-        "Visible": False
-    },
-    {
-        "Caption": "Software de Segurança",
-        "Class": "AntiVirusProduct",
-        "Keys": [
-            "displayName"
-        ],
-        "Name": "AntiVirusProduct",
-        "Namespace": "root\\SecurityCenter2",
-        "Visible": False
-    },
-    {
-        "Caption": "Programas Instalados",
-        "Class": "Win32_Product",
-        "Keys": [
-            "Name"
-        ],
-        "Name": "Product",
-        "Visible": False
-    },
-    {
-        "Caption": "Chave de Licença do Office",
-        "Class": "SoftwareLicensingProduct",
-        "Filter": [
-            "LicenseStatus",
-            "=",
-            "'1'",
-            "AND",
-            "Name",
-            "LIKE",
-            "'Office%'"
-        ],
-        "Keys": [
-            "Name",
-            "PartialProductKey"
-        ],
-        "Name": "SoftwareLicensingProduct",
-        "Visible": False
-    }
-]
 
 # Estrutura da janela
 class Application:
@@ -172,6 +15,7 @@ class Application:
         self.master.geometry("300x75") # Define as dimensões da janela (L x A)
         self.master.overrideredirect(True) # Remove a barra superior
 
+        self.widgets = self.load_to_json("widgets.json") # Carrega o arquivo "widgets.json"
         self.wmi_data_collection = {} # Armazena os dados coletados do WMI
 
         # Estruturando os widgets da janela de carregamento
@@ -198,6 +42,17 @@ class Application:
         seja encerrada automaticamente quando a Thread principal (a aplicação Tkinter) é fechada. 
         Isso garante que o programa não continue rodando em segundo plano.
         """
+
+    # Carrega os arquivos JSON com codificação UTF-8
+    def load_to_json(self, file_path):
+        if os.path.exists(file_path):
+            with open(file_path, "r", encoding='utf-8') as file:
+                return json.load(file)
+
+    # Salva os dados como arquivo JSON com codificação UTF-8
+    def save_to_json(self, file_path, file_json):
+        with open(file_path, "w", encoding='utf-8') as archive_json:
+            json.dump(file_json, archive_json, ensure_ascii=False, indent=4)
 
     # Função que centraliza a janela na tela
     def center_window(self):
@@ -228,9 +83,9 @@ class Application:
         """
         pythoncom.CoInitialize() # Inicializa o COM para a Thread
         try:
-            qtt_widgets = len(widgets) # Obtém a quantidade total de widgets
+            qtt_widgets = len(self.widgets) # Obtém a quantidade total de widgets
             # Estrutura de carregamento da barra de progresso
-            for i, widget in enumerate(widgets, start=1):
+            for i, widget in enumerate(self.widgets, start=1):
                 wmi_objects = self.search_wmi_objects(widget) # Realiza a busca dos dados
                 self.wmi_data_collection.update(wmi_objects) # Armazena os dados na memória
                 percent = (i / qtt_widgets) * 100 # Cálcula a porcentagem de progresso
@@ -299,7 +154,7 @@ class Application:
 
     # Função que cria os widgets do WMI dinâmicamente na janela
     def create_wmi_widgets(self):
-        for widget in widgets:
+        for widget in self.widgets:
             # Obtém os dados do widget
             widget_text = widget["Caption"]
             widget_name = widget["Name"]
