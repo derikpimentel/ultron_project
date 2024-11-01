@@ -6,6 +6,8 @@ from tkinter import *
 from tkinter.ttk import Progressbar
 import pythoncom
 from wmi import WMI
+import numpy as np
+from PIL import Image, ImageTk
 
 # Estrutura da janela
 class Application:
@@ -17,6 +19,9 @@ class Application:
 
         self.widgets = self.load_to_json("widgets.json") # Carrega o arquivo "widgets.json"
         self.wmi_data_collection = {} # Armazena os dados coletados do WMI
+        copy_icon = Image.open("copy.png") # Cria um ícone
+        copy_icon = copy_icon.resize((8, 8), Image.LANCZOS) # Redimensiona para 8x8
+        self.copy_icon = ImageTk.PhotoImage(copy_icon) # Converte para uso do Tkinter
 
         # Estruturando os widgets da janela de carregamento
         self.loading_screen = Frame(self.master)
@@ -38,9 +43,9 @@ class Application:
         threading.Thread(target=self.running_operation, daemon=True).start()
         """
         Observação:
-        Adicionar o parâmetro "daemon=True" na Thread é uma boa ideia, pois faz com que a Thread 
-        seja encerrada automaticamente quando a Thread principal (a aplicação Tkinter) é fechada. 
-        Isso garante que o programa não continue rodando em segundo plano.
+        Adicionar o parâmetro "daemon=True" na Thread é uma boa ideia, pois faz com que a 
+        Thread seja encerrada automaticamente quando a Thread principal (a aplicação Tkinter) 
+        é fechada. Isso garante que o programa não continue rodando em segundo plano.
         """
 
     # Carrega os arquivos JSON com codificação UTF-8
@@ -58,8 +63,8 @@ class Application:
     def center_window(self):
         self.master.update_idletasks() # Atualiza a interface gráfica
         """
-        Atualiza a interface para o caso de haver tarefas pendentes, e para garantir que o tamanho 
-        correto seja calculado.
+        Atualiza a interface para o caso de haver tarefas pendentes, e para garantir que o 
+        tamanho correto seja calculado.
         """
 
         # Obtém a largura e altura da tela
@@ -154,6 +159,37 @@ class Application:
 
     # Função que cria os widgets do WMI dinâmicamente na janela
     def create_wmi_widgets(self):
+        # Conversor de valores para exibição dos dados
+        def text_converter(text_id, value_to_convert):
+
+            if text_id in ['Capacity', 'AdapterRAM']:
+                qtt_bytes = int(value_to_convert)
+                to_giga = format(qtt_bytes/(1024**3), '.0f')
+                return f"{str(to_giga)} GB"
+
+            elif text_id in ['Size']:
+                qtt_bytes = int(value_to_convert)
+                to_giga = format(qtt_bytes/(1024**3), '.2f')
+                return f"{str(to_giga)} GB"
+
+            elif text_id in ['SMBIOSMemoryType']:
+                type_dict = {
+                    20: 'DDR', 
+                    21: 'DDR2', 
+                    22: 'DDR2 FB-DIMM', 
+                    24: 'DDR3', 
+                    26: 'DDR4'
+                }
+                # Identifica a numeração caso exista na lista
+                select_type = type_dict.get(value_to_convert)
+                return str(select_type)
+
+            elif text_id in ['Speed']:
+                return f"{str(value_to_convert)} Mhz"
+
+            else:
+                return str(value_to_convert)
+
         for widget in self.widgets:
             # Obtém os dados do widget
             widget_text = widget["Caption"]
@@ -169,38 +205,99 @@ class Application:
                 title = Label(wmi_widget)
                 title["text"] = widget_text
                 title["font"] = ("Segoe UI", "9", "bold")
-                title.pack()
+                title.grid(row=0, columnspan=1)
 
                 # Obtém a lista de objetos do WMI
                 wmi_objects = self.wmi_data_collection[widget_name]
                 if wmi_objects:
-                    for wmi_object in wmi_objects:
+                    matrix = [] # Cria uma lista para matriz de dados
 
-                        values = []
+                    # ETAPA 1: Busca todos os valores do objeto e guarda na matriz
+                    for wmi_object in wmi_objects:
+                        values = [] # Cria uma lista para receber os valores
                         # Faz uma varredura nos atributos do objeto
                         for key in widget_keys:
-                            value_str = str(getattr(wmi_object, key))
-                            values.append(value_str)
-                        values_str = " ".join(values) # Junta os valores
+                            get_value = str(getattr(wmi_object, key))
+                            # Faz a conversão do valor para exibição
+                            value = text_converter(key, get_value)
+                            values.append(value)
+                        matrix.append(values) # Salva a lista de valores na matriz
 
-                        item = Text(wmi_widget, height=1, width=50)
+                    # ETAPA 2: Ordena os valores por chave e padroniza os valores
+                    # Transpõe a matriz de dados para ordenar os valores da mesma chave
+                    matrix_t = np.array(matrix).T
+                    for values in matrix_t:
+                        max_length = len(values[0]) # Assume a primeira como a maior
+                        for value in values:
+                            str_length = len(value)
+                            if str_length > max_length:
+                                max_length = str_length # Se a atual for maior, troca o valor
+
+                        # Depois de obter o maior comprimento, centraliza todas as strings
+                        for i in range(len(values)):
+                            values[i] = values[i].center(max_length)
+
+                    # ETAPA 3: Retorna a matriz para o formato original e exibe os valores
+                    matrix = np.array(matrix_t).T
+                    for row_counter, values in enumerate(matrix, start=1):
+                        values_str = " | ".join(values) # Faz a junção dos valores
+
+                        item = Text(wmi_widget)
                         item["wrap"] = 'none'
-                        item["bd"] = 0 # Espessura de borda da caixa
+                        item["bd"] = 0 # Espessura de borda
                         item["bg"] = wmi_widget.cget('bg')
-                        item["font"] = ("Segoe UI", "8")
+                        item["font"] = ("Courier", "8") # Fonte monoespaçada
                         item.insert(END, values_str) # Insere um texto na caixa de texto
+                        self.adjust_textbox_size(item) # Ajusta o tamanho da caixa de texto
                         item.config(state='disabled') # Desabilita a edição de texto
-                        item.pack()
+                        item.grid(row=row_counter, column=0)
+
+                        # Cria um botão para copiar o texto com o ícone
+                        copy_button = Button(wmi_widget)
+                        copy_button["width"] = 10
+                        copy_button["height"] = 10
+                        copy_button["bd"] = 0
+                        copy_button["image"] = self.copy_icon # Insere o ícone
+                        copy_button["command"] = lambda txt=item: self.text_copy(txt)
+                        """
+                        Função lambda:
+                        Isso passa a 'Text' específica associada ao botão como argumento para
+                        a função 'text_copy'.
+                        """
+                        copy_button.grid(row=row_counter, column=1, padx=10)
                 else:
                     # Para o caso de não existirem dados
-                    item = Text(wmi_widget, height=1, width=50)
+                    item = Text(wmi_widget)
                     item["wrap"] = 'none'
                     item["bd"] = 0
                     item["bg"] = wmi_widget.cget('bg')
-                    item["font"] = ("Segoe UI", "8")
+                    item["font"] = ("Courier", "8")
                     item.insert(END, "Indisponível")
+                    self.adjust_textbox_size(item)
                     item.config(state='disabled')
-                    item.pack()
+                    item.grid(row=1, columnspan=1)
+
+    def text_copy(self, text_box):
+        text = text_box.get("1.0", "end-1c") # Obtém o conteúdo diretamente do Text
+        self.master.clipboard_clear() # Limpa a área de transferência
+        self.master.clipboard_append(text) # Adiciona o texto à área de transferência
+
+    # Ajusta o espaçamento da caixa de texto na janela
+    def adjust_textbox_size(self, text_box=None):
+        get_text = text_box.get("1.0", "end-1c")
+
+        # Se o conteúdo estiver vazio, define dimensões mínimas
+        if not get_text:
+            text_box.config(width=10, height=1)
+            return
+
+        lines = get_text.split("\n") # Quebra o conteúdo em linhas
+
+        # Calcula a largura da linha mais longa
+        max_line_length = max(len(line) for line in lines)
+
+        # Define a largura e a altura baseada no conteúdo
+        text_box.config(width=max_line_length, height=len(lines))
 
 # Estrutura de execução
 if __name__ == "__main__":
