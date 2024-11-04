@@ -16,6 +16,8 @@ class Application:
         self.master.title("Ultron") # Altera o título da janela
         self.master.geometry("300x75") # Define as dimensões da janela (L x A)
         self.master.overrideredirect(True) # Remove a barra superior
+        # Configurando um protocolo para fechamento da janela
+        self.master.protocol("WM_DELETE_WINDOW", self.close_window)
 
         self.widgets = self.load_to_json("widgets.json") # Carrega o arquivo "widgets.json"
         self.wmi_data_collection = {} # Armazena os dados coletados do WMI
@@ -47,6 +49,11 @@ class Application:
         Thread seja encerrada automaticamente quando a Thread principal (a aplicação Tkinter) 
         é fechada. Isso garante que o programa não continue rodando em segundo plano.
         """
+
+    # Função para fechamento da janela
+    def close_window(self):
+        self.save_to_json("widgets.json", self.widgets) # Salva as alterações
+        self.master.destroy() # Encerra o programa
 
     # Carrega os arquivos JSON com codificação UTF-8
     def load_to_json(self, file_path):
