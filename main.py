@@ -132,6 +132,15 @@ class Application:
         self.master.overrideredirect(False) # Devolve a barra superior
         self.master.resizable(False, False) # Desabilita o redimensionamento da janela
 
+        # Estrutura do menu principal da janela
+        self.menu_bar = Menu(self.master)
+        self.menu_display = Menu(self.menu_bar, tearoff=0) # Criando o menu "Exibir"
+        self.menu_bar.add_cascade(
+            label="Exibir", 
+            menu=self.menu_display
+        ) # Insere o menu "Exibir" ao menu principal
+        self.master.config(menu=self.menu_bar) # Acrescentando o menu principal na janela
+
         # Estruturando os widgets da janela principal
         self.main_screen = Frame(self.master)
         self.main_screen.pack(padx=10, pady=10)
@@ -146,6 +155,7 @@ class Application:
         # Estrutura do conteúdo dinâmico da janela
         self.container_main = Frame(self.main_screen)
         self.container_main.pack(padx=10, pady=10)
+        self.wmi_widgets_collection = {} # Para armazenar os widgets do WMI
         self.create_wmi_widgets() # Carrega os widgets do WMI na janela
 
         self.container_footer = Frame(self.main_screen)
@@ -153,7 +163,7 @@ class Application:
         self.label_info = Label(self.container_footer)
         self.label_info["text"] = "Desenvolvido por Derik B. Pimentel"
         self.label_info.pack()
-        # início do "main_screen"
+        # final do "main_screen"
 
         self.master.deiconify() # Mostra a janela novamente
 
@@ -190,93 +200,131 @@ class Application:
             else:
                 return str(value_to_convert)
 
-        for widget in self.widgets:
+        # Estrutura de criação dos widgets e do posicionamento na janela
+        for position, widget in enumerate(self.widgets):
             # Obtém os dados do widget
             widget_text = widget["Caption"]
             widget_name = widget["Name"]
-            widget_keys = widget["Keys"]
-            widget_show = widget["Visible"]
 
-            # Exibe os widgets habilitados
-            if widget_show:
-                wmi_widget = Frame(self.container_main)
-                wmi_widget.pack()
+            wmi_widget = Frame(self.container_main)
+            wmi_widget.grid(row=position) # Define um posicionamento ordenado
 
-                title = Label(wmi_widget)
-                title["text"] = widget_text
-                title["font"] = ("Segoe UI", "9", "bold")
-                title.grid(row=0, columnspan=1)
+            title = Label(wmi_widget)
+            title["text"] = widget_text
+            title["font"] = ("Segoe UI", "9", "bold")
+            title.grid(row=0, column=0, columnspan=2)
 
-                # Obtém a lista de objetos do WMI
-                wmi_objects = self.wmi_data_collection[widget_name]
-                if wmi_objects:
-                    matrix = [] # Cria uma lista para matriz de dados
+            # Obtém a lista de objetos do WMI
+            wmi_objects = self.wmi_data_collection[widget_name]
+            if wmi_objects:
+                matrix = [] # Cria uma lista para matriz de dados
 
-                    # ETAPA 1: Busca todos os valores do objeto e guarda na matriz
-                    for wmi_object in wmi_objects:
-                        values = [] # Cria uma lista para receber os valores
-                        # Faz uma varredura nos atributos do objeto
-                        for key in widget_keys:
-                            get_value = str(getattr(wmi_object, key))
-                            # Faz a conversão do valor para exibição
-                            value = text_converter(key, get_value)
-                            values.append(value)
-                        matrix.append(values) # Salva a lista de valores na matriz
+                # ETAPA 1: Busca todos os valores do objeto e guarda na matriz
+                for wmi_object in wmi_objects:
+                    values = [] # Cria uma lista para receber os valores
+                    # Faz uma varredura nos atributos do objeto
+                    for key in widget["Keys"]:
+                        get_value = str(getattr(wmi_object, key))
+                        # Faz a conversão do valor para exibição
+                        value = text_converter(key, get_value)
+                        values.append(value)
+                    matrix.append(values) # Salva a lista de valores na matriz
 
-                    # ETAPA 2: Ordena os valores por chave e padroniza os valores
-                    # Transpõe a matriz de dados para ordenar os valores da mesma chave
-                    matrix_t = np.array(matrix).T
-                    for values in matrix_t:
-                        max_length = len(values[0]) # Assume a primeira como a maior
-                        for value in values:
-                            str_length = len(value)
-                            if str_length > max_length:
-                                max_length = str_length # Se a atual for maior, troca o valor
+                # ETAPA 2: Ordena os valores por chave e padroniza os valores
+                # Transpõe a matriz de dados para ordenar os valores da mesma chave
+                matrix_t = np.array(matrix).T
+                for values in matrix_t:
+                    max_length = len(values[0]) # Assume a primeira como a maior
+                    for value in values:
+                        str_length = len(value)
+                        if str_length > max_length:
+                            max_length = str_length # Se a atual for maior, troca o valor
 
-                        # Depois de obter o maior comprimento, centraliza todas as strings
-                        for i in range(len(values)):
-                            values[i] = values[i].center(max_length)
+                    # Depois de obter o maior comprimento, centraliza todas as strings
+                    for i in range(len(values)):
+                        values[i] = values[i].center(max_length)
 
-                    # ETAPA 3: Retorna a matriz para o formato original e exibe os valores
-                    matrix = np.array(matrix_t).T
-                    for row_counter, values in enumerate(matrix, start=1):
-                        values_str = " | ".join(values) # Faz a junção dos valores
+                # ETAPA 3: Retorna a matriz para o formato original e exibe os valores
+                matrix = np.array(matrix_t).T
+                for row_counter, values in enumerate(matrix, start=1):
+                    values_str = " | ".join(values) # Faz a junção dos valores
 
-                        item = Text(wmi_widget)
-                        item["wrap"] = 'none'
-                        item["bd"] = 0 # Espessura de borda
-                        item["bg"] = wmi_widget.cget('bg')
-                        item["font"] = ("Courier", "8") # Fonte monoespaçada
-                        item.insert(END, values_str) # Insere um texto na caixa de texto
-                        self.adjust_textbox_size(item) # Ajusta o tamanho da caixa de texto
-                        item.config(state='disabled') # Desabilita a edição de texto
-                        item.grid(row=row_counter, column=0)
-
-                        # Cria um botão para copiar o texto com o ícone
-                        copy_button = Button(wmi_widget)
-                        copy_button["width"] = 10
-                        copy_button["height"] = 10
-                        copy_button["bd"] = 0
-                        copy_button["image"] = self.copy_icon # Insere o ícone
-                        copy_button["command"] = lambda txt=item: self.text_copy(txt)
-                        """
-                        Função lambda:
-                        Isso passa a 'Text' específica associada ao botão como argumento para
-                        a função 'text_copy'.
-                        """
-                        copy_button.grid(row=row_counter, column=1, padx=10)
-                else:
-                    # Para o caso de não existirem dados
                     item = Text(wmi_widget)
                     item["wrap"] = 'none'
-                    item["bd"] = 0
+                    item["bd"] = 0 # Espessura de borda
                     item["bg"] = wmi_widget.cget('bg')
-                    item["font"] = ("Courier", "8")
-                    item.insert(END, "Indisponível")
-                    self.adjust_textbox_size(item)
-                    item.config(state='disabled')
-                    item.grid(row=1, columnspan=1)
+                    item["font"] = ("Courier", "8") # Fonte monoespaçada
+                    item.insert(END, values_str) # Insere um texto na caixa de texto
+                    self.adjust_textbox_size(item) # Ajusta o tamanho da caixa de texto
+                    item.config(state='disabled') # Desabilita a edição de texto
+                    item.grid(row=row_counter, column=0)
 
+                    # Cria um botão para copiar o texto com o ícone
+                    copy_button = Button(wmi_widget)
+                    copy_button["width"] = 10
+                    copy_button["height"] = 10
+                    copy_button["bd"] = 0
+                    copy_button["image"] = self.copy_icon # Insere o ícone
+                    copy_button["command"] = lambda txt=item: self.text_copy(txt)
+                    """
+                    Função lambda:
+                    Isso passa a 'Text' associada ao botão como argumento para a função 
+                    'text_copy'.
+                    """
+                    copy_button.grid(row=row_counter, column=1, padx=10)
+            else:
+                # Para o caso de não existirem dados
+                item = Text(wmi_widget)
+                item["wrap"] = 'none'
+                item["bd"] = 0
+                item["bg"] = wmi_widget.cget('bg')
+                item["font"] = ("Courier", "8")
+                item.insert(END, "Indisponível")
+                self.adjust_textbox_size(item)
+                item.config(state='disabled')
+                item.grid(row=1, column=0, columnspan=2)
+
+            # Cria um BooleanVar para controle no menu
+            check_widget = BooleanVar(value=widget["Visible"])
+            self.wmi_widgets_collection[widget_name] = {
+                "check": check_widget,
+                "grid_info": wmi_widget.grid_info(),
+                "widget": wmi_widget
+            } # Armazena os dados do widget
+            self.toggle_widget(widget_name) # Padroniza a visualização inicial
+            # Adiciona o controle de opção ao menu "Exibir"
+            self.menu_display.add_checkbutton(
+                label=widget_text,
+                variable=check_widget,
+                command=lambda key=widget_name: self.toggle_widget(key)
+            )
+        
+    # Alterna a visibilidade do widget com base no estado do checkbutton
+    def toggle_widget(self, key):
+        element = self.wmi_widgets_collection[key]
+        widget = element["widget"]
+
+        # Busca os dados no arquivo JSON
+        widget_settings = self.find_widget("Name", key)
+
+        if element["check"].get():
+            # Reexibe o widget com as opções de empacotamento originais
+            widget.grid(**element["grid_info"])
+            widget_settings["Visible"] = "True"
+        else:
+            widget.grid_forget() # Esconde o widget
+            widget_settings["Visible"] = "False"
+
+    # Busca as configurações do widget no arquivo JSON carregado
+    def find_widget(self, key, value):
+        # A função 'next()' para a busca assim que encontrar o widget desejado
+        return next(
+            # Expressão geradora que verifica item a item
+            (widget for widget in self.widgets if widget[key] == value), 
+            None # Caso não exista
+        )
+
+    # Função para copiar o texto
     def text_copy(self, text_box):
         text = text_box.get("1.0", "end-1c") # Obtém o conteúdo diretamente do Text
         self.master.clipboard_clear() # Limpa a área de transferência

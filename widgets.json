@@ -1,5 +1,27 @@
 [
     {
+        "Caption": "BIOS",
+        "Class": "Win32_BIOS",
+        "Keys": [
+            "Manufacturer",
+            "Name",
+            "SerialNumber"
+        ],
+        "Name": "BIOS",
+        "Visible": false
+    },
+    {
+        "Caption": "Computador",
+        "Class": "Win32_ComputerSystem",
+        "Keys": [
+            "Manufacturer",
+            "Model",
+            "SystemFamily"
+        ],
+        "Name": "ComputerSystem",
+        "Visible": false
+    },
+    {
         "Caption": "Processador",
         "Class": "Win32_Processor",
         "Keys": [
@@ -78,25 +100,13 @@
         "Visible": true
     },
     {
-        "Caption": "BIOS",
-        "Class": "Win32_BIOS",
+        "Caption": "Software de Segurança",
+        "Class": "AntiVirusProduct",
         "Keys": [
-            "Manufacturer",
-            "Name",
-            "SerialNumber"
+            "displayName"
         ],
-        "Name": "BIOS",
-        "Visible": false
-    },
-    {
-        "Caption": "Sistema do Computador",
-        "Class": "Win32_ComputerSystem",
-        "Keys": [
-            "Manufacturer",
-            "Model",
-            "SystemFamily"
-        ],
-        "Name": "ComputerSystem",
+        "Name": "AntiVirusProduct",
+        "Namespace": "root\\SecurityCenter2",
         "Visible": false
     },
     {
@@ -118,25 +128,6 @@
         "Visible": false
     },
     {
-        "Caption": "Software de Segurança",
-        "Class": "AntiVirusProduct",
-        "Keys": [
-            "displayName"
-        ],
-        "Name": "AntiVirusProduct",
-        "Namespace": "root\\SecurityCenter2",
-        "Visible": false
-    },
-    {
-        "Caption": "Programas Instalados",
-        "Class": "Win32_Product",
-        "Keys": [
-            "Name"
-        ],
-        "Name": "Product",
-        "Visible": false
-    },
-    {
         "Caption": "Chave de Licença do Office",
         "Class": "SoftwareLicensingProduct",
         "Filter": [
@@ -153,6 +144,15 @@
             "PartialProductKey"
         ],
         "Name": "SoftwareLicensingProduct",
+        "Visible": false
+    },
+    {
+        "Caption": "Programas Instalados",
+        "Class": "Win32_Product",
+        "Keys": [
+            "Name"
+        ],
+        "Name": "Product",
         "Visible": false
     }
 ]
