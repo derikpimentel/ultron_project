@@ -3,7 +3,8 @@ import json
 import time
 import threading
 from tkinter import *
-from tkinter.ttk import Progressbar, Treeview
+from tkinter import filedialog, messagebox
+from tkinter.ttk import Progressbar
 import pythoncom
 from wmi import WMI
 import numpy as np
@@ -16,11 +17,14 @@ class Application:
         self.master.title("Ultron") # Altera o título da janela
         self.master.geometry("300x75") # Define as dimensões da janela (L x A)
         self.master.overrideredirect(True) # Remove a barra superior
+        self.master.iconbitmap("robo.ico") # Ícone de janela para windows
         # Configurando um protocolo para fechamento da janela
         self.master.protocol("WM_DELETE_WINDOW", self.close_window)
 
         self.widgets = self.load_to_json("widgets.json") # Carrega o arquivo "widgets.json"
         self.wmi_data_collection = {} # Armazena os dados coletados do WMI
+        self.file_txt = "INVENTÁRIO DE MÁQUINA DO ULTRON\n" # Arquivo de texto da memória
+
         copy_icon = Image.open("copy.png") # Cria um ícone
         copy_icon = copy_icon.resize((8, 8), Image.LANCZOS) # Redimensiona para 8x8
         self.copy_icon = ImageTk.PhotoImage(copy_icon) # Converte para uso do Tkinter
@@ -141,11 +145,13 @@ class Application:
 
         # Estrutura do menu principal da janela
         self.menu_bar = Menu(self.master)
-        self.menu_display = Menu(self.menu_bar, tearoff=0) # Criando o menu "Exibir"
-        self.menu_bar.add_cascade(
-            label="Exibir", 
-            menu=self.menu_display
-        ) # Insere o menu "Exibir" ao menu principal
+        # Criando o menu "Arquivo"
+        self.menu_file = Menu(self.menu_bar, tearoff=0)
+        self.menu_file.add_command(label="Salvar Arquivo", command=self.save_file)
+        self.menu_bar.add_cascade(label="Arquivo", menu=self.menu_file)
+        # Criando o menu "Visualizar"
+        self.menu_display = Menu(self.menu_bar, tearoff=0)
+        self.menu_bar.add_cascade(label="Visualizar", menu=self.menu_display)
         self.master.config(menu=self.menu_bar) # Acrescentando o menu principal na janela
 
         # Estruturando os widgets da janela principal
@@ -173,6 +179,27 @@ class Application:
         # final do "main_screen"
 
         self.master.deiconify() # Mostra a janela novamente
+
+    # Abre a janela para escolher o local e nome do arquivo
+    def save_file(self):
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".txt", # Define a extensão padrão do arquivo
+            filetypes=[
+                ("Text files", "*.txt"),
+                ("All files", "*.*")
+            ], # Define os tipos de arquivos
+            title="Salvar Arquivo"
+        )
+        
+        if file_path: # Verifica se o usuário escolheu um caminho
+            try:
+                # Conteúdo de exemplo para arquivo de texto
+                with open(file_path, 'w') as file:
+                    file.write(self.file_txt)
+                
+                messagebox.showinfo("Salvar Arquivo", "Arquivo salvo com sucesso!")
+            except Exception as e:
+                messagebox.showerror("Erro", f"Erro ao salvar o arquivo: {e}")
 
     # Função que cria os widgets do WMI dinâmicamente na janela
     def create_wmi_widgets(self):
@@ -225,6 +252,7 @@ class Application:
             title["text"] = widget_text
             title["font"] = ("Segoe UI", "9", "bold")
             title.grid(row=0, column=0, columnspan=2)
+            self.file_txt += f"\n{widget_text}:\n" # Acrescenta ao arquivo TXT da memória
 
             # Obtém a lista de objetos do WMI
             wmi_objects = self.wmi_data_collection[widget_name]
@@ -260,6 +288,7 @@ class Application:
                 matrix = np.array(matrix_t).T
                 for row_counter, values in enumerate(matrix, start=1):
                     values_str = " | ".join(values) # Faz a junção dos valores
+                    self.file_txt += f" -> {values_str}\n"
 
                     item = Text(wmi_widget)
                     item["wrap"] = 'none'
@@ -286,6 +315,7 @@ class Application:
                     copy_button.grid(row=row_counter, column=1, padx=10)
             else:
                 # Para o caso de não existirem dados
+                self.file_txt += f" -> Indisponível\n"
                 item = Text(wmi_widget)
                 item["wrap"] = 'none'
                 item["bd"] = 0
