@@ -3,7 +3,7 @@ import json
 import time
 import threading
 from tkinter import *
-from tkinter.ttk import Progressbar
+from tkinter.ttk import Progressbar, Treeview
 import pythoncom
 from wmi import WMI
 import numpy as np
@@ -212,6 +212,11 @@ class Application:
             # Obtém os dados do widget
             widget_text = widget["Caption"]
             widget_name = widget["Name"]
+            widget_show = widget["Visible"]
+
+            # Escape do widget desabilitado
+            if widget_show == "DISABLED":
+                continue
 
             wmi_widget = Frame(self.container_main)
             wmi_widget.grid(row=position) # Define um posicionamento ordenado
@@ -292,7 +297,7 @@ class Application:
                 item.grid(row=1, column=0, columnspan=2)
 
             # Cria um BooleanVar para controle no menu
-            check_widget = BooleanVar(value=widget["Visible"])
+            check_widget = BooleanVar(value=widget_show)
             self.wmi_widgets_collection[widget_name] = {
                 "check": check_widget,
                 "grid_info": wmi_widget.grid_info(),
@@ -317,10 +322,10 @@ class Application:
         if element["check"].get():
             # Reexibe o widget com as opções de empacotamento originais
             widget.grid(**element["grid_info"])
-            widget_settings["Visible"] = "True"
+            widget_settings["Visible"] = True
         else:
             widget.grid_forget() # Esconde o widget
-            widget_settings["Visible"] = "False"
+            widget_settings["Visible"] = False
 
     # Busca as configurações do widget no arquivo JSON carregado
     def find_widget(self, key, value):

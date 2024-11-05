@@ -153,6 +153,6 @@
             "Name"
         ],
         "Name": "Product",
-        "Visible": false
+        "Visible": "DISABLED"
     }
 ]
