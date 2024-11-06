@@ -1,7 +1,9 @@
 import os
+import sys
 import json
 import time
 import threading
+import subprocess
 from tkinter import *
 from tkinter import filedialog, messagebox
 from tkinter.ttk import Progressbar
@@ -19,7 +21,7 @@ class Application:
         self.master.overrideredirect(True) # Remove a barra superior
         self.master.iconbitmap("robo.ico") # Ícone de janela para windows
         # Configurando um protocolo para fechamento da janela
-        self.master.protocol("WM_DELETE_WINDOW", self.close_window)
+        self.master.protocol("WM_DELETE_WINDOW", self.exit_app)
 
         self.widgets = self.load_to_json("widgets.json") # Carrega o arquivo "widgets.json"
         self.wmi_data_collection = {} # Armazena os dados coletados do WMI
@@ -54,10 +56,10 @@ class Application:
         é fechada. Isso garante que o programa não continue rodando em segundo plano.
         """
 
-    # Função para fechamento da janela
-    def close_window(self):
+    # Função para saída da aplicação
+    def exit_app(self):
         self.save_to_json("widgets.json", self.widgets) # Salva as alterações
-        self.master.destroy() # Encerra o programa
+        self.master.destroy() # Encerra a janela principal da aplicação
 
     # Carrega os arquivos JSON com codificação UTF-8
     def load_to_json(self, file_path):
@@ -148,6 +150,8 @@ class Application:
         # Criando o menu "Arquivo"
         self.menu_file = Menu(self.menu_bar, tearoff=0)
         self.menu_file.add_command(label="Salvar Arquivo", command=self.save_file)
+        self.menu_file.add_separator() # Adiciona um separador
+        self.menu_file.add_command(label="Reiniciar", command=self.restart_app)
         self.menu_bar.add_cascade(label="Arquivo", menu=self.menu_file)
         # Criando o menu "Visualizar"
         self.menu_display = Menu(self.menu_bar, tearoff=0)
@@ -179,6 +183,14 @@ class Application:
         # final do "main_screen"
 
         self.master.deiconify() # Mostra a janela novamente
+    
+    # Função para reiniciar a aplicação
+    def restart_app(self):
+        self.exit_app()
+        python_exe = sys.executable # Localiza o executável do Python
+        # Inicia uma nova instância com o mesmo script e argumentos
+        subprocess.Popen([python_exe] + sys.argv)
+        sys.exit() # Encerra a instância atual
 
     # Abre a janela para escolher o local e nome do arquivo
     def save_file(self):
